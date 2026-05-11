@@ -61,6 +61,49 @@
 
     header span { font-size: 22px; }
 
+    #btn-install {
+      display: none;
+      margin-left: auto;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 13px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .update-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 16px;
+      background: #1565c0;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 500;
+      flex-shrink: 0;
+      border-bottom: 1px solid #0d47a1;
+    }
+
+    .update-banner.visible { display: flex; }
+
+    .update-banner button {
+      background: #fff;
+      color: #1565c0;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
     .main {
       flex: 1;
       overflow-y: auto;
@@ -251,7 +294,13 @@
 <header>
   <span>✈</span>
   <h1>Gliding Travelspeed</h1>
+  <button id="btn-install">App installieren</button>
 </header>
+
+<div class="update-banner" id="update-banner">
+  <span>&#x1F504; Neue Version verfügbar!</span>
+  <button id="btn-update">Jetzt installieren</button>
+</div>
 
 <div class="main">
 
@@ -539,18 +588,63 @@
   compute();
 
   // ─── FOOTER ──────────────────────────────────────────────────────
+  const APP_VERSION = '1.2';
   const footer = document.createElement('footer');
   footer.style.cssText = 'text-align:center;padding:10px 16px 18px;flex-shrink:0;';
   footer.innerHTML = `
     <p style="font-size:10px;color:#607d9a;letter-spacing:0.04em;">
-      Travelspeedometer by Dr. Herbert Pirker &nbsp;·&nbsp; v1.0
+      Travelspeedometer by Dr. Herbert Pirker &nbsp;·&nbsp; v${APP_VERSION}
     </p>`;
   document.body.appendChild(footer);
 
-  // Service worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
-  }
+  // ─── INSTALL PROMPT ───────────────────────────────────────────────
+  let deferredInstallPrompt = null;
+  const btnInstall = document.getElementById('btn-install');
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    btnInstall.style.display = 'block';
+  });
+
+  btnInstall.addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    if (outcome === 'accepted') btnInstall.style.display = 'none';
+    deferredInstallPrompt = null;
+  });
+
+  window.addEventListener('appinstalled', () => {
+    btnInstall.style.display = 'none';
+  });
+
+  // ─── SERVICE WORKER + UPDATE BANNER ──────────────────────────────
+  if ('serviceWorker' in navigator) (async () => {
+    const reg = await navigator.serviceWorker.register('./sw.js');
+
+    const showUpdateBanner = () => {
+      document.getElementById('update-banner').classList.add('visible');
+    };
+
+    if (reg.waiting) showUpdateBanner();
+
+    reg.addEventListener('updatefound', () => {
+      reg.installing.addEventListener('statechange', () => {
+        if (reg.installing?.state === 'installed' && navigator.serviceWorker.controller) {
+          showUpdateBanner();
+        }
+      });
+    });
+
+    document.getElementById('btn-update').addEventListener('click', () => {
+      if (reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
+    });
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+  })();
 </script>
 </body>
 </html>

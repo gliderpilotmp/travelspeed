@@ -1,9 +1,14 @@
-const CACHE = 'segelflug-speed-v1';
-const ASSETS = ['/', '/index.html'];
+const VERSION = '1.2';
+const CACHE = `travelspeed-v${VERSION}`;
+const ASSETS = ['./', './index.html', './manifest.json', './icon.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
-  self.skipWaiting();
+  // No skipWaiting — the update banner controls when we take over
+});
+
+self.addEventListener('message', e => {
+  if (e.data === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
