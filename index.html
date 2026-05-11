@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a0f1e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Gliding Travelspeed</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0f1e;
+      --surface: #111827;
+      --surface2: #1a2235;
+      --border: #1e3a5f;
+      --accent: #2196f3;
+      --accent2: #00e5ff;
+      --green: #00c853;
+      --yellow: #ffd600;
+      --red: #f44336;
+      --text: #e8f4ff;
+      --muted: #607d9a;
+      --needle: #ff6b35;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+    }
+
+    header {
+      padding: 12px 16px 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    header h1 {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: var(--accent2);
+      text-transform: uppercase;
+    }
+
+    header span { font-size: 22px; }
+
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 12px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ─── INPUTS ─── */
+    .inputs-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .input-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .input-label .name {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .input-label .value-display {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent2);
+      font-variant-numeric: tabular-nums;
+      min-width: 80px;
+      text-align: right;
+    }
+
+    .input-label .unit {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: 3px;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--surface2);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 3px solid var(--bg);
+      box-shadow: 0 0 8px rgba(33,150,243,0.6);
+      cursor: pointer;
+    }
+
+    input[type=range]::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 3px solid var(--bg);
+      box-shadow: 0 0 8px rgba(33,150,243,0.6);
+      cursor: pointer;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 -4px;
+    }
+
+    /* ─── GAUGES ─── */
+    .gauges-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .gauge-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 8px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .gauge-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .gauge-svg {
+      width: 100%;
+      max-width: 180px;
+    }
+
+    .gauge-value {
+      font-size: 28px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .gauge-value.over { color: var(--red); }
+
+    .gauge-unit {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* ─── FORMULA DISPLAY ─── */
+    .formula-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 16px;
+    }
+
+    .formula-card h3 {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+
+    .formula-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .formula-row:last-child { border-bottom: none; }
+
+    .formula-text {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .formula-text em {
+      color: var(--accent2);
+      font-style: normal;
+      font-weight: 600;
+    }
+
+    .formula-result {
+      font-size: 18px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+    }
+
+    .formula-result.over { color: var(--red); }
+  </style>
+</head>
+<body>
+
+<header>
+  <span>✈</span>
+  <h1>Gliding Travelspeed</h1>
+</header>
+
+<div class="main">
+
+  <!-- INPUTS -->
+  <div class="inputs-card">
+    <div class="input-row">
+      <div class="input-label">
+        <span class="name">V(t) — Fahrt</span>
+        <span><span class="value-display" id="vt-display">110</span><span class="unit">km/h</span></span>
+      </div>
+      <input type="range" id="vt" min="0" max="220" step="1" value="110">
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="input-row">
+      <div class="input-label">
+        <span class="name">Vario(t) — Steigen</span>
+        <span><span class="value-display" id="vario-display">1.0</span><span class="unit">m/s</span></span>
+      </div>
+      <input type="range" id="vario" min="0" max="50" step="1" value="10">
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="input-row">
+      <div class="input-label">
+        <span class="name">K(M) — MacCready-Faktor</span>
+        <span><span class="value-display" id="km-display">5.0</span><span class="unit"></span></span>
+      </div>
+      <input type="range" id="km" min="0" max="100" step="1" value="50">
+    </div>
+  </div>
+
+  <!-- GAUGES -->
+  <div class="gauges-row">
+    <div class="gauge-card">
+      <div class="gauge-title">Gleitflug</div>
+      <svg class="gauge-svg" id="svg-gleit" viewBox="0 0 200 180"></svg>
+      <div class="gauge-value" id="val-gleit">—</div>
+      <div class="gauge-unit">km/h</div>
+    </div>
+
+    <div class="gauge-card">
+      <div class="gauge-title">Kreisflug</div>
+      <svg class="gauge-svg" id="svg-kreis" viewBox="0 0 200 180"></svg>
+      <div class="gauge-value" id="val-kreis">—</div>
+      <div class="gauge-unit">km/h</div>
+    </div>
+  </div>
+
+  <!-- FORMULA -->
+  <div class="formula-card">
+    <h3>Formel</h3>
+    <div class="formula-row">
+      <div class="formula-text">
+        <em>VR<sub>gleit</sub></em> = V(t) + Vario(t) × K(M)
+      </div>
+      <div class="formula-result" id="formula-gleit">—</div>
+    </div>
+    <div class="formula-row">
+      <div class="formula-text">
+        <em>VR<sub>kreis</sub></em> = Vario(t) × K(M)
+      </div>
+      <div class="formula-result" id="formula-kreis">—</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ─── GAUGE DRAWING ───────────────────────────────────────────────
+  const CX = 100, CY = 110, R = 86;
+  const START_DEG = 135;
+  const SWEEP = 270;
+  const MAX_KMH = 200;
+
+  function deg2rad(d) { return d * Math.PI / 180; }
+
+  function polar(r, angleDeg) {
+    const a = deg2rad(angleDeg);
+    return { x: CX + r * Math.cos(a), y: CY + r * Math.sin(a) };
+  }
+
+  function arcPath(r, a1, a2) {
+    const p1 = polar(r, a1);
+    const p2 = polar(r, a2);
+    const large = (a2 - a1) % 360 > 180 ? 1 : 0;
+    return `M${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A${r} ${r} 0 ${large} 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+  }
+
+  function valueToAngle(v) {
+    const clamped = Math.max(0, Math.min(MAX_KMH, v));
+    return START_DEG + (clamped / MAX_KMH) * SWEEP;
+  }
+
+  function el(tag, attrs, extra) {
+    const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    if (attrs) Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+    if (extra) extra(e);
+    return e;
+  }
+
+  function buildGauge(svgId) {
+    const svg = document.getElementById(svgId);
+    svg.innerHTML = '';
+
+    // Color zones
+    const zones = [
+      { from: 0,   to: 120, color: '#00c853', opacity: '0.25' },
+      { from: 120, to: 160, color: '#ffd600', opacity: '0.25' },
+      { from: 160, to: 200, color: '#f44336', opacity: '0.25' },
+    ];
+    zones.forEach(z => {
+      const a1 = valueToAngle(z.from);
+      const a2 = valueToAngle(z.to);
+      svg.appendChild(el('path', {
+        d: arcPath(R, a1, a2),
+        fill: 'none',
+        stroke: z.color,
+        'stroke-width': '12',
+        'stroke-linecap': 'round',
+        opacity: z.opacity,
+      }));
+    });
+
+    // Track background
+    svg.appendChild(el('path', {
+      d: arcPath(R, START_DEG, START_DEG + SWEEP),
+      fill: 'none',
+      stroke: '#1a2235',
+      'stroke-width': '10',
+    }));
+
+    // Tick marks + labels
+    for (let v = 0; v <= MAX_KMH; v += 10) {
+      const a = valueToAngle(v);
+      const isMajor = v % 20 === 0;
+      const inner = polar(R - (isMajor ? 14 : 8), a);
+      const outer = polar(R, a);
+      svg.appendChild(el('line', {
+        x1: inner.x, y1: inner.y,
+        x2: outer.x, y2: outer.y,
+        stroke: isMajor ? '#607d9a' : '#2a3f5f',
+        'stroke-width': isMajor ? 2 : 1,
+        'stroke-linecap': 'round',
+      }));
+      if (v % 40 === 0) {
+        const lp = polar(R - 24, a);
+        const t = el('text', {
+          x: lp.x, y: lp.y,
+          fill: '#607d9a',
+          'font-size': '10',
+          'font-weight': '600',
+          'text-anchor': 'middle',
+          'dominant-baseline': 'central',
+        });
+        t.textContent = v;
+        svg.appendChild(t);
+      }
+    }
+
+    // Needle group (will be updated)
+    const needleGroup = el('g', { id: svgId + '-needle' });
+
+    // Needle body
+    const np = { x: CX, y: CY }; // will be animated
+    needleGroup.appendChild(el('line', {
+      id: svgId + '-line',
+      x1: CX, y1: CY,
+      x2: CX + R * 0.75, y2: CY,
+      stroke: '#ff6b35',
+      'stroke-width': '3',
+      'stroke-linecap': 'round',
+    }));
+
+    // Tail
+    needleGroup.appendChild(el('line', {
+      id: svgId + '-tail',
+      x1: CX, y1: CY,
+      x2: CX - R * 0.18, y2: CY,
+      stroke: '#ff6b35',
+      'stroke-width': '4',
+      'stroke-linecap': 'round',
+    }));
+
+    svg.appendChild(needleGroup);
+
+    // Center cap
+    svg.appendChild(el('circle', {
+      cx: CX, cy: CY, r: 8,
+      fill: '#1a2235',
+      stroke: '#ff6b35',
+      'stroke-width': '2',
+    }));
+
+    svg.appendChild(el('circle', {
+      cx: CX, cy: CY, r: 3,
+      fill: '#ff6b35',
+    }));
+  }
+
+  function updateNeedle(svgId, value) {
+    const angle = valueToAngle(value);
+    const rad = deg2rad(angle);
+    const tip = {
+      x: CX + R * 0.75 * Math.cos(rad),
+      y: CY + R * 0.75 * Math.sin(rad),
+    };
+    const tail = {
+      x: CX - R * 0.18 * Math.cos(rad),
+      y: CY - R * 0.18 * Math.sin(rad),
+    };
+    document.getElementById(svgId + '-line').setAttribute('x2', tip.x);
+    document.getElementById(svgId + '-line').setAttribute('y2', tip.y);
+    document.getElementById(svgId + '-tail').setAttribute('x2', tail.x);
+    document.getElementById(svgId + '-tail').setAttribute('y2', tail.y);
+  }
+
+  // ─── INPUTS & CALCULATION ────────────────────────────────────────
+  let vtVal = 110, varioVal = 1.0, kmVal = 5.0;
+
+  const vtSlider    = document.getElementById('vt');
+  const varioSlider = document.getElementById('vario');
+  const kmSlider    = document.getElementById('km');
+
+  const vtDisplay    = document.getElementById('vt-display');
+  const varioDisplay = document.getElementById('vario-display');
+  const kmDisplay    = document.getElementById('km-display');
+
+  vtSlider.addEventListener('input', () => {
+    vtVal = parseInt(vtSlider.value);
+    vtDisplay.textContent = vtVal;
+    compute();
+  });
+
+  varioSlider.addEventListener('input', () => {
+    varioVal = parseInt(varioSlider.value) / 10;
+    varioDisplay.textContent = varioVal.toFixed(1);
+    compute();
+  });
+
+  kmSlider.addEventListener('input', () => {
+    kmVal = parseInt(kmSlider.value) / 10;
+    kmDisplay.textContent = kmVal.toFixed(1);
+    compute();
+  });
+
+  function fmt(v) { return v.toFixed(1); }
+
+  function compute() {
+    // Vario in m/s × K(M) → convert to km/h (*3.6) for unit consistency
+    // VR_gleit = V(t) [km/h] + Vario [m/s] * K(M) * 3.6 [km/h per (m/s)]
+    // VR_kreis = Vario [m/s] * K(M) * 3.6
+    const varioKmh = varioVal * 3.6;
+    const vrGleit = vtVal + varioKmh * kmVal;
+    const vrKreis = varioKmh * kmVal;
+
+    // Update gauge needles (clamped to 0-200 for display)
+    updateNeedle('svg-gleit', vrGleit);
+    updateNeedle('svg-kreis', vrKreis);
+
+    // Update numeric displays
+    const valGleit = document.getElementById('val-gleit');
+    valGleit.textContent = fmt(vrGleit);
+    valGleit.classList.toggle('over', vrGleit > MAX_KMH);
+
+    const valKreis = document.getElementById('val-kreis');
+    valKreis.textContent = fmt(vrKreis);
+    valKreis.classList.toggle('over', vrKreis > MAX_KMH);
+
+    // Formula display
+    const fGleit = document.getElementById('formula-gleit');
+    fGleit.textContent = fmt(vrGleit) + ' km/h';
+    fGleit.classList.toggle('over', vrGleit > MAX_KMH);
+
+    const fKreis = document.getElementById('formula-kreis');
+    fKreis.textContent = fmt(vrKreis) + ' km/h';
+    fKreis.classList.toggle('over', vrKreis > MAX_KMH);
+  }
+
+  // ─── INIT ─────────────────────────────────────────────────────────
+  buildGauge('svg-gleit');
+  buildGauge('svg-kreis');
+  compute();
+
+  // ─── FOOTER ──────────────────────────────────────────────────────
+  const footer = document.createElement('footer');
+  footer.style.cssText = 'text-align:center;padding:10px 16px 18px;flex-shrink:0;';
+  footer.innerHTML = `
+    <p style="font-size:10px;color:#607d9a;letter-spacing:0.04em;">
+      Travelspeedometer by Dr. Herbert Pirker &nbsp;·&nbsp; v1.0
+    </p>`;
+  document.body.appendChild(footer);
+
+  // Service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+</script>
+</body>
+</html>
